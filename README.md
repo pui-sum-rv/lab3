@@ -1,152 +1,69 @@
-# Plotting, Noise and Noise Removal
+# Thresholding and Binary Morphology
 
-## Introduction to Matplotlib
+## Thresholding
 
-Matplotlib is probably the most commonly used Python package for 2D graphics visualization. This package provides a fast way to visualize data from Python, as well as the ability to create high-quality images in many different formats.
+## What is Thresholding?
 
-`matplotlib.pyplot` is a collection of functions that make matplotlib behave similarly to MATLAB, making it easy for those with experience in MATLAB plotting to quickly adapt.
+The simplest segmentation method. 
 
-`matplotlib.pyplot` is _stateful_, which means it keeps track of the current figure, and all commands are directed at that figure.
+Application example: Separate out regions of an image corresponding to objects which we want to analyze. This separation is based on the variation of intensity between the object pixels and the background pixels.
 
-### Simple Plots
+To differentiate the pixels we are interested in from the rest (which will eventually be rejected), we perform a comparison of each pixel intensity value with respect to a threshold (determined according to the problem to
+solve).
 
-In this section, we will show how to use matplotlib to plot some simple graphs. We'll start with the default settings, and then gradually improve the appearance of the graphs.
-More about this is explaned with examples in corresponding Jupyter notebook. 
+Once we have separated properly the important pixels, we can set them with a determined value to identify them (i.e. we can assign them a value of 0 (black), 255 (white) or any value that suits your needs).
 
-## Noise
+![](https://docs.opencv.org/2.4/_images/Threshold_Tutorial_Theory_Example.jpg)
 
-Wikipedia: [Image noise]( https://en.wikipedia.org/wiki/Image_noise )
+## Simple Thresholding
 
-### Gaussian noise
+Here, the matter is straight forward. If pixel value is greater than a threshold value, it is assigned one value (may be white), else it is assigned another value (may be black). The function used is `cv2.threshold`. First
+argument is the source image, which should be a grayscale image. Second argument is the threshold value which is used to classify the pixel values. Third argument is the ` maxVal ` which represents the value to be given if pixel
+value is more than (sometimes less than) the threshold value. OpenCV provides different styles of thresholding and it is decided by the fourth parameter of the function. Different types are:
 
-Gaussian noise represents statistical noise where the probability of a particular value occurring follows a normal or Gaussian distribution.
+- cv2.THRESH_BINARY
+- cv2.THRESH_BINARY_INV
+- cv2.THRESH_TRUNC
+- cv2.THRESH_TOZERO
+- cv2.THRESH_TOZERO_INV
 
-The probability of occurrence for a random value $z$ is given by:
+To illustrate how these thresholding processes work, let’s consider that we have a source image with pixels with intensity values $` src(x,y) `$. 
+The plot below depicts this. The horizontal blue line represents the threshold $` thresh `$ (fixed).
 
-![gauss formula](https://upload.wikimedia.org/math/c/7/0/c70012e2b38059f77ba8b6bb4cea7e2c.png)
+![](https://docs.opencv.org/2.4/_images/Threshold_Tutorial_Theory_Base_Figure.png)
 
-where $z$ is the gray level, $\mu$ is the mean value, and $\sigma$ is the standard deviation.
-
-The Gaussian distribution with given parameters $\mu$ and $\sigma$ looks like:
-
-![gauss distrib](https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Normal_Distribution_PDF.svg/720px-Normal_Distribution_PDF.svg.png)
-
-Više o Gaussovom šumu: 
-
-- [Gaussian distribution](https://en.wikipedia.org/wiki/Gaussian_distribution)
-- [Gaussian noise](https://en.wikipedia.org/wiki/Gaussian_noise)
-
-### Uniform noise
-
-
-Uniform noise, also known as quantization noise, typically occurs during the quantization of pixel values in an input image to a certain number of discrete levels. It has an approximately uniform distribution, meaning that every value within a certain range has an equal probability of occurring.
-
-![uniform_formula](https://upload.wikimedia.org/math/8/f/b/8fbfebfbb3dfa135da807a45374376d5.png)
-
-where $a$ and $b$ are the boundaries within which a value can occur.
-
-Here is what a uniform distribution looks like:
-
-![uniform_dist](https://upload.wikimedia.org/wikipedia/commons/9/96/Uniform_Distribution_PDF_SVG.svg)
-
-More about this topic can be found here:
-
-- [ Quantization (Uniform) noise ](https://en.wikipedia.org/wiki/Image_noise#Quantization_noise_.28uniform_noise.29) 
-- [ Uniform distribution ]( https://en.wikipedia.org/wiki/Uniform_distribution_%28continuous%29)
-
-### Salt and pepper noise
-
-Salt and pepper noise is a type of noise where a certain percentage of random pixels in the image are either white or black.
-
-![snp](https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Noise_salt_and_pepper.png/220px-Noise_salt_and_pepper.png)
-
-## Task 1
-
-Load an arbitrary image and add Gaussian noise to it using the function defined above. Display the original image and the image with added noise in the same code cell. When displaying the images, set the `imshow` argument `cmap='gray'`. Assign a title to each image that corresponds to it (With Noise / Without Noise).
-
-Tip: You can use `plt.show()` to display the current state on the screen and allow plotting of a new graph.
-
-## Task 2
-
-Using the `plt.hist` function, display the histogram of the original image and the image with added noise in the same code cell. Assign a title to each histogram. Set the `bins` parameter to the maximum value suitable for the image. Tip: Numpy arrays have a `.flatten()` method that converts the matrix into a 1D array of numbers.
+The documentation clearly explains what each type is meant for. [Please check out the
+documentation](http://docs.opencv.org/doc/tutorials/imgproc/threshold/threshold.html).
 
 ## Task 3
 
-Based on the `gaussian_noise` function and the formula for uniform noise above, implement a function that returns uniform noise for the parameters `a` and `b`.
+Using OpenCV, load the image `images/apple.jpg` as a **grayscale** image. Perform simple **binary** thresholding in two ways: 1) using the OpenCV function mentioned above, and 2) using NumPy by setting all pixels above a certain value to 255 and others to 0. Display the thresholded image.
 
-# Median filtering
+## Otsu Binarization
 
-### Brief Description
+**Binarization** of an image is the process of converting the image into a format where each pixel can only be one of two possible values. For `uint8` images, these values are usually `0` (black) and `255` (white). For `float` images, the values are `0` (black) or `1.0` (white). **Binarization** is often a precursor to **thresholding**, where the image is divided into completely white and black regions, and then only the parts of the original image that are completely white in the binary image are retained. Mathematically, by multiplying the original and binary images, the pixels that are completely white in the binary image remain unchanged, while those that are completely black are multiplied by 0, resulting in a completely black pixel in the product image.
 
-The median filter is normally used to reduce noise
-in an image, somewhat like the mean  (averaging) filter. However, it often does a
-better job than the mean filter of preserving useful detail in the
-image.
+In the previous example, you manually determined the threshold. Otsu binarization is a more advanced method that determines the optimal threshold based on the **histogram** of the image, which best separates the pixels. A histogram is a graph that shows the frequency of each value in a data set. In the case of an image, the histogram shows, for each color value, how many pixels are of that color.
 
+Let's take a look at the histogram of the `apple.jpg` image.
 
-### How It Works
+![image](https://github.com/user-attachments/assets/4e8c4963-191e-4f68-903d-8117ca5e8a9c)
 
-Like the mean (averaging) filter, the median filter considers each pixel in the
-image in turn and looks at its nearby neighbors to decide whether or
-not it is representative of its surroundings. Instead of simply
-replacing the pixel value with the <EM>mean</EM> of neighboring pixel
-values, it replaces it with the <EM>median</EM> of those values. The
-median is calculated by first sorting all the pixel values from the
-surrounding neighborhood into numerical order and then replacing the
-pixel being considered with the middle pixel value.  (If the
-neighborhood under consideration contains an even number of pixels,
-the average of the two middle pixel values is used.) Following image 
-illustrates an example calculation.
-
-<CENTER><IMG ALT="" SRC="http://homepages.inf.ed.ac.uk/rbf/HIPR2/figs/med3x3.gif"></CENTER>
-
- Calculating the median value of a pixel neighborhood. As
-can be seen, the central pixel value of 150 is rather unrepresentative
-of the surrounding pixels and is replaced with the median value:
-124. A 3&#215;3 square neighborhood is used here --- larger
-neighborhoods will produce more severe smoothing.
-
-### Guidelines for Use
-
-<P>By calculating the median value of a neighborhood rather than the
-mean value, the median filter has two main advantages over
-the mean filter:
-
-- The median is a more robust average than the mean and so a
-single very unrepresentative pixel in a neighborhood will not affect
-the median value significantly.
-
-- Since the median value must actually be the value of one of the
-pixels in the neighborhood, the median filter does not create new
-unrealistic pixel values when the filter straddles an edge. For this
-reason the median filter is much better at preserving sharp edges than
-the mean filter.
-
-You can use median filter with the following code:
-
-```
-median = cv2.medianBlur( image, radius )
-```
-
-where image is numpy array containing the image, and radius is an integer which
-defines the radius of the neighborhood for filtering.
-
-You can use gaussian blur filter with the following code:
-
-```
-blur = cv2.GaussianBlur( image, (kernelXsize, kernelYsize), sigma )
-```
-
-where image is numpy array containing the image, (kernelXsize, kernelYsize) is
-a tuple containing the size of the kernel ( e.g. `(5, 5)` for 5x5 kernel ) and
-sigma is the value of $`  \sigma  `$ parameter.
+From the histogram, it is evident that most pixels are grouped around the values 255 and 50. By approximation, we see that the optimal way to separate the pixels into two groups would be with a threshold between 150 and 200, as this threshold effectively separates the two largest groups of pixels.
 
 ## Task 4
 
-Corrupt an arbitrary image with 10% salt and pepper noise. Apply a median filter to the image and display the original and filtered images. Visually determine the best filter parameters that will remove the noise but not blur the image too much.
-Apply Gaussian blur to the corrupted image and display the original and filtered images. Visually determine the best filter parameters that will remove the noise without blurring the image too much.
+According to the following link, implement Otsu binarization for the `apple.jpg` image. Display the resulting binary image **using Matplotlib**. Print the optimal threshold value determined by the Otsu method to the console.
+
+Such a binary image can be used as a **mask** for the original image. A mask is a binary image where the value is `0` for all pixels that should not be visible, and the maximum value (`1.0` or `255`) for pixels that should be visible.
 
 ## Task 5
 
-Corrupt an arbitrary image with Gaussian noise with sigma = 15. Apply a median filter to the image and display the original and filtered images. Visually determine the best filter parameters that will remove the noise without blurring the image too much. 
-Apply Gaussian blur to the corrupted image and display the original and filtered images. Visually determine the best filter parameters that will remove the noise without blurring the image too much.
+Using the Otsu binary image as a mask, apply the function `img_thresholded = cv.bitwise_and(img, img, mask=mask)` where `img` is the original grayscale image of the apple, and `mask` is the Otsu binary image.
+
+## Improving Masks with Binary Morphology
+
+Morphological operations such as `erosion`, `dilation`, `closing` and `opening` are common tools used to improve masks after they are generated by thresholding. They can be used to fill small holes, remove noise, increase or decrease the size of an object, or smoothen mask outlines.
+
+Most morphological operations are once again simple kernel functions that are applied at each pixel of the image based on their neighborhood as defined by a `structuring element (SE)`. For example, `dilation` simply assigns to the central pixel the maximum pixel value within the neighborhood; it is a maximum filter. Conversely, `erosion` is a minimum filter. Additional options emerge from combining the two: `morphological closing`, for example, is a `dilation` followed by an `erosion`. This is used to fill in gaps and holes or smoothing mask outlines without significantly changing the mask's area. Finally, there are also some more complicated morphological operations, such as `hole filling`.
+
